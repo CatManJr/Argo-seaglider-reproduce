@@ -9,6 +9,7 @@ used in Song et al. RFR pipeline:
   - Potential Density (σ₀)
   - Spice / spiciness (τ)
   - Brunt-Väisälä frequency (N²)
+  - log₁₀(N²) — "N² was log-transformed since its distribution is non-Gaussian"
   - Oxygen saturation (O₂,sat)
 
 Requires: gsw (Gibbs Seawater Oceanographic Toolbox)
@@ -92,6 +93,22 @@ def brunt_vaisala_frequency(sa, ct, p):
     for i in range(len(p) - 1):
         N2[i] = n2[i]
     return N2
+
+
+def log_brunt_vaisala(n2):
+    """
+    Log-transformed Brunt-Väisälä frequency log₁₀(N²).
+    Paper: "N² was log-transformed since its distribution is non-Gaussian."
+    Inputs:
+      n2 : N² [s⁻²] (output of brunt_vaisala_frequency)
+    Returns:
+      log10_N2 : log₁₀(N²) [log₁₀(s⁻²)], NaN where N² ≤ 0
+    """
+    n2 = np.asarray(n2, dtype=float)
+    result = np.full_like(n2, np.nan)
+    valid = n2 > 0
+    result[valid] = np.log10(n2[valid])
+    return result
 
 
 def oxygen_saturation(sa, ct, p, o2):
@@ -184,6 +201,12 @@ def compute_all_teos10(df, t_col="temp", sp_col="psal", p_col="pressure",
         else:
             result["N2"] = brunt_vaisala_frequency(sa, ct, p)
         print("  Computed N2 (per-profile)")
+
+    # --- log₁₀(N²) --- (paper: "N² was log-transformed since its
+    #     distribution is non-Gaussian")
+    if "logN2" not in result.columns and "N2" in result.columns:
+        result["logN2"] = log_brunt_vaisala(result["N2"].values)
+        print("  Computed logN2")
 
     # --- O₂ Saturation ---
     if o2_col in result.columns and "O2sat" not in result.columns:

@@ -15,6 +15,7 @@ from utils.teos10 import (
     potential_density,
     spice,
     brunt_vaisala_frequency,
+    log_brunt_vaisala,
     oxygen_saturation,
     compute_all_teos10,
 )
@@ -69,6 +70,23 @@ class TestConversions:
                 f"Only {len(positive)}/{len(valid)} positive"
             )
 
+    def test_log_n2_positive_only(self):
+        """log₁₀(N²) only defined for N² > 0."""
+        n2 = np.array([1e-5, 1e-4, 0, -1e-6, np.nan, 1e-3])
+        logn2 = log_brunt_vaisala(n2)
+        assert not np.isnan(logn2[0])
+        assert not np.isnan(logn2[1])
+        assert np.isnan(logn2[2])
+        assert np.isnan(logn2[3])
+        assert np.isnan(logn2[4])
+        assert not np.isnan(logn2[5])
+
+    def test_log_n2_values(self):
+        """log₁₀(1e-4) = -4, log₁₀(1e-3) = -3."""
+        logn2 = log_brunt_vaisala(np.array([1e-4, 1e-3]))
+        assert abs(logn2[0] - (-4.0)) < 0.01
+        assert abs(logn2[1] - (-3.0)) < 0.01
+
 
 class TestComputeAll:
     """Integration test for compute_all_teos10()."""
@@ -89,7 +107,7 @@ class TestComputeAll:
 
     def test_output_columns(self, sample_df):
         result = compute_all_teos10(sample_df)
-        expected = ["CT", "SA", "sigma0", "spice"]
+        expected = ["CT", "SA", "sigma0", "spice", "N2", "logN2"]
         for col in expected:
             assert col in result.columns, f"Missing {col}"
 

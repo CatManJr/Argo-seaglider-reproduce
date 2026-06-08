@@ -27,8 +27,8 @@ RFR_FEATURES = [
 
 RFR_TARGET = "nitrate"  # [NO₃⁻]  [µmol kg⁻¹]
 
-# Features screened out as redundant:
-SCREENED_OUT = ["sigma0", "spice", "N2", "O2sat"]
+# Features screened out as redundant (exhaustive holdout screening):
+SCREENED_OUT = ["sigma0", "spice", "N2", "logN2", "O2sat"]
 
 
 # ── Seasonal Encoding ──────────────────────────────────────────────
@@ -125,7 +125,8 @@ def get_feature_info():
         {"feature": "ydsin",    "role": "selected",  "reason": "Seasonal encoding (sin)"},
         {"feature": "sigma0",   "role": "excluded",  "reason": "Redundant with Θ, SA, p"},
         {"feature": "spice",    "role": "excluded",  "reason": "Redundant; used in CWT analysis only"},
-        {"feature": "N2",       "role": "excluded",  "reason": "Redundant (log-transformed in screening)"},
+        {"feature": "N2",       "role": "excluded",  "reason": "Redundant; log-transformed in screening"},
+        {"feature": "logN2",    "role": "excluded",  "reason": "Log-transformed N²; redundant"},
         {"feature": "O2sat",    "role": "excluded",  "reason": "Redundant with Θ, SA, p, O₂"},
     ])
     return info

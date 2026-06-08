@@ -159,7 +159,8 @@ class TestFeatureInfo:
         all_features = set(info["feature"])
         assert "CT" in all_features
         assert "sigma0" in all_features  # screened out
-        assert len(info) >= 13  # 9 selected + 4 excluded
+        assert "logN2" in all_features   # screened out
+        assert len(info) >= 14  # 9 selected + 5 excluded
 
     def test_selected_count(self):
         info = get_feature_info()
