@@ -5,9 +5,15 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
 
 # Virtual environments
 .venv
-data/*/*.csv
-data/*.csv
-data/*/*.pkl
+
+# Data & model files (regeneratable — run fetch_zenodo.py + model.py)
+data/zenodo_main/
+data/processed/
+data/model_output/
+data/argo/
+data/goship/
+data/seaglider/
