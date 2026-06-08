@@ -1,11 +1,12 @@
 """
 preprocess/pipeline.py — Full preprocessing pipeline for Song et al. RFR.
 
-Replicates Table 3 preprocessing steps:
-  Step 2  — TEOS-10 variable calculation
-  Step 3  — Mixed layer depth calculation
-  Step 4  — Feature engineering & seasonal encoding
-  Step 5  — (model.py) RFR training
+Preprocessing steps:
+  1. Load & QC (upper 1000 dbar, dataset-specific filters)
+  2. TEOS-10 variable calculation
+  3. Mixed layer depth calculation
+  4. Feature engineering & seasonal encoding
+  5. Output RFR-ready feature matrices for model.py
 
 Input:  Raw CSV from Zenodo (bgcArgo, GO-SHIP, SOGOS float, Seaglider)
 Output: RFR-ready feature matrix X and target y
@@ -50,14 +51,13 @@ DATA_DIR = PROJECT_ROOT / "data" / "zenodo_main"
 OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Paper: "Upper 1000 m limit" (Table 3, Step 1)
+# Paper: upper 1000 dbar limit
 PRES_MAX = 1000
 
-# Paper: "SOGOS float (WMO 5906030) was deliberately withheld from
-#  training" (p.12, l.256–258)
+# Paper: SOGOS float (WMO 5906030) deliberately withheld from training
 WMO_SOGOS = 5906030
 
-# Zenodo file mapping — training/test split matches paper Table 1
+# Zenodo file mapping — training/test split per paper
 DATASETS = {
     "training": {
         "argo": {
@@ -95,14 +95,9 @@ DATASETS = {
 }
 
 
-# ── Step 1: Load & QC (paper Table 3, Step 1) ─────────────────────
+# ── Load & QC ──────────────────────────────────────────────────────
 def load_dataset(csv_path, label, row_filter=None):
-    """
-    Load Zenodo CSV and perform QC matching paper Table 3, Step 1:
-      - Upper 1000 dbar limit
-      - Remove NaN in critical fields
-      - Apply dataset-specific filter (exclude SOGOS float, split I06/I07)
-    """
+    """Load Zenodo CSV and perform QC: upper 1000 dbar, drop NaN, apply dataset-specific filter."""
     print(f"  Loading {label}: {csv_path.name}")
     df = pd.read_csv(csv_path)
 
@@ -113,7 +108,7 @@ def load_dataset(csv_path, label, row_filter=None):
 
     before = len(df)
 
-    # Paper: "Upper 1000 m limit" (Table 3, Step 1)
+    # Upper 1000 dbar limit
     if "pressure" in df.columns:
         over = (df["pressure"] > PRES_MAX).sum()
         if over:
@@ -140,7 +135,7 @@ def load_dataset(csv_path, label, row_filter=None):
     return df
 
 
-# ── Step 2: TEOS-10 (if raw T/S present) ───────────────────────────
+# ── TEOS-10 (if raw T/S present) ───────────────────────────────────
 def apply_teos10(df, label):
     """Compute TEOS-10 variables if not already present."""
     # Zenodo data already has CT, SA, sigma0, spice — skip if present
@@ -160,7 +155,7 @@ def apply_teos10(df, label):
     return df
 
 
-# ── Step 3: MLD ────────────────────────────────────────────────────
+# ── Mixed Layer Depth ──────────────────────────────────────────────
 def apply_mld(df, label):
     """Compute MLD and mixed-layer nitrate metrics."""
     profid_col = "profid" if "profid" in df.columns else None
@@ -182,7 +177,7 @@ def apply_mld(df, label):
     return df, mld_df
 
 
-# ── Step 4: Feature Engineering ────────────────────────────────────
+# ── Feature Engineering ────────────────────────────────────────────
 def apply_features(df, label):
     """Compute seasonal encoding and select RFR features."""
     # Ensure yearday exists (Zenodo data has "yearday")
@@ -240,16 +235,16 @@ def process_dataset(name, info):
             print(f"  ⚠ File not found: {path}")
             continue
 
-        # Step 1: Load & QC (upper 1000 m, dataset-specific filter)
+        # Load & QC
         df = load_dataset(path, key, row_filter=row_filter)
 
-        # Step 2: TEOS-10
+        # TEOS-10
         df = apply_teos10(df, key)
 
-        # Step 3: MLD
+        # Mixed layer depth
         df, mld_df = apply_mld(df, key)
 
-        # Step 4: Features
+        # Feature engineering
         df, X, y = apply_features(df, key)
 
         if X is not None:

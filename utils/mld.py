@@ -2,7 +2,7 @@
 utils/mld.py — Mixed Layer Depth (MLD) calculation.
 
 Implements the density-threshold method from Dove et al. (2021),
-as used in Song et al. (Table 3, Step 3):
+as used in Song et al.:
 
   "shallowest depth where σ₀ exceeds the 10 m value by 0.05 kg m⁻³"
 

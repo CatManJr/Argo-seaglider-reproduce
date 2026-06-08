@@ -1,7 +1,7 @@
 """
 utils/features.py — Feature engineering for Song et al. RFR pipeline.
 
-Implements Table 3, Steps 4–5:
+Feature engineering for the RFR pipeline:
   - Seasonal cyclical encoding: sz₁ = cos(2π·yd/365), sz₂ = sin(2π·yd/365)
   - Final 9-feature selection: Θ, SA, p, O₂, lat, lon, time, sz₁, sz₂
   - Features *screened out*: σ₀, τ, N², O₂,sat (redundant with core 9)
@@ -12,7 +12,7 @@ Also handles yearday conversion from datetime timestamps.
 import numpy as np
 import pandas as pd
 
-# ── Final RFR feature set (Table 3, Step 4) ───────────────────────
+# ── Final RFR feature set ──────────────────────────────────────────
 RFR_FEATURES = [
     "CT",       # Conservative Temperature Θ  [°C]
     "SA",       # Absolute Salinity            [g kg⁻¹]
@@ -27,7 +27,7 @@ RFR_FEATURES = [
 
 RFR_TARGET = "nitrate"  # [NO₃⁻]  [µmol kg⁻¹]
 
-# Features screened out as redundant (Table 3, Step 4):
+# Features screened out as redundant:
 SCREENED_OUT = ["sigma0", "spice", "N2", "O2sat"]
 
 
@@ -36,7 +36,7 @@ def seasonal_encode(yearday):
     """
     Cyclical encoding of day-of-year for seasonality.
 
-    Paper: "seasonal variables improve upper 100 m performance"
+    Seasonal encoding improves upper 100 m performance.
 
     Parameters
     ----------

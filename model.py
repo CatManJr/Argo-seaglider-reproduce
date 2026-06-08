@@ -2,12 +2,11 @@
 model.py — Random Forest Regression for Southern Ocean nitrate inference.
 
 Implements Song et al. (submitted) methodology
-  Step 1  — RFR training (1000 trees, max_features=1/3, min_samples_leaf=5)
-         — Triple validation: holdout 20%, k-fold (k=10), spatial LOO
-         — Profiles kept intact during splitting
-  Step 2  — Independent testing on SOGOS float + GO-SHIP I07
-  Step 3  — Benchmark comparison (CANYON-B, ESPER-Mixed)
-  Step 4  — Application to Seagliders SG659/SG660
+  - RFR training (1000 trees, max_features=1/3, min_samples_leaf=5)
+  - Triple validation: holdout 20%, k-fold (k=10), spatial LOO per float
+  - Independent testing on SOGOS float + GO-SHIP I07
+  - Benchmark comparison (CANYON-B, ESPER-Mixed)
+  - Application to Seagliders SG659/SG660
 
 Usage:
   uv run python model.py --train          # train & triple-validate
@@ -47,8 +46,8 @@ RFR_PARAMS = dict(
     verbose=0,
 )
 
-# Validation folds use fewer trees for speed
-RFR_VAL_PARAMS = {**RFR_PARAMS, "n_estimators": 200, "oob_score": False, "verbose": 0}
+# Validation folds use full 1000 trees (identical to paper)
+RFR_VAL_PARAMS = {**RFR_PARAMS, "oob_score": False}
 
 FEATURE_COLS = [
     "CT", "SA", "pressure", "oxygen",
@@ -114,7 +113,7 @@ def spatial_leave_one_out(X, y, groups):
     return splits
 
 
-# ── Evaluation Metrics (paper Table 4) ─────────────────────────────
+# ── Evaluation Metrics ────────────────────────────────────────────
 def evaluate(y_true, y_pred, label=""):
     """MAE, IQR-AE, % within ±0.5, mean bias, 95% error bounds."""
     ae = np.abs(y_pred - y_true)
@@ -149,11 +148,11 @@ def train_rfr(X, y, verbose=True):
     return rf
 
 
-# ── Triple Validation (Table 3, Step 5) ────────────────────────────
+# ── Triple Validation ──────────────────────────────────────────────
 def triple_validation(X, y, groups):
-    """Holdout 20% + k-Fold (k=10) + Spatial leave-one-out."""
+    """Holdout 20% + k-Fold (k=10) + Spatial leave-one-out per float."""
     print("\n" + "=" * 55)
-    print("  Triple Validation (Table 3, Step 5)")
+    print("  Triple Validation")
     print("=" * 55)
     Xa, ya = X.values, y.values
     results = {}
@@ -205,11 +204,11 @@ def triple_validation(X, y, groups):
     return results
 
 
-# ── Independent Testing (Table 3, Step 7) ──────────────────────────
+# ── Independent Testing ────────────────────────────────────────────
 def independent_test(rf, X_test, y_test):
     """Evaluate final model on withheld data."""
     print("\n" + "=" * 55)
-    print("  Independent Testing (Table 3, Step 7)")
+    print("  Independent Testing")
     print("=" * 55)
     Xa = X_test.values
     y_pred = rf.predict(Xa)
@@ -223,11 +222,11 @@ def independent_test(rf, X_test, y_test):
         evaluate(y_test.iloc[sogos_n:], y_pred[sogos_n:], "GO-SHIP I07")
 
 
-# ── Application to Seagliders (Table 3, Step 9) ────────────────────
+# ── Application to Seagliders ──────────────────────────────────────
 def apply_to_gliders(rf):
     """Apply trained RFR to SG659 and SG660 high-resolution data."""
     print("\n" + "=" * 55)
-    print("  Application to Seagliders (Table 3, Step 9)")
+    print("  Application to Seagliders")
     print("=" * 55)
 
     for glider_tag, glider_name in [("sg659", "SG659"), ("sg660", "SG660")]:
@@ -293,7 +292,7 @@ def main():
 
     if do_bench:
         print("\n" + "=" * 55)
-        print("  Benchmark Comparison (Table 3, Step 8)")
+        print("  Benchmark Comparison")
         print("=" * 55)
         print("  CANYON-B: https://github.com/HCBScienceProducts/CANYON-B")
         print("  ESPER:    https://github.com/BRCScienceProducts/ESPER")

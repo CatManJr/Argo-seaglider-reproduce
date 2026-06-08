@@ -2,7 +2,7 @@
 utils/teos10.py — TEOS-10 thermodynamic variable calculations.
 
 Converts raw in-situ measurements (T, S, p, O₂) into the derived variables
-used in Song et al. RFR pipeline (Table 3, Step 2):
+used in Song et al. RFR pipeline:
 
   - Conservative Temperature (Θ)
   - Absolute Salinity (SA)
